@@ -51,3 +51,12 @@ Variables use numeric ids, so renaming a role in CCM does not break your buttons
 - Per channel (`ch<connectionId>_...`): `label`, `talkers`, `talk_count`, `members`
 - System: `base_state`, `base_uptime`, `base_version`, `packs_online`, `packs_total`, `low_battery_list`,
   `offline_list`, `last_caller`, `last_call_channel`, `last_call_time`, `gpi<n>`, `gpo<n>`
+
+### Security
+
+The base's control interface has no authentication. Anyone who can reach it on port 80 can do everything this
+module does: kill mics, send call signals, change roles and reroute ports. Keep the base on an isolated
+production network, and only run Companion on machines that are allowed to control it.
+
+"Remote mic kill: all packs" is off by default, so a stray button press cannot mute the whole crew. Turn it on in
+the connection settings if you need it.
