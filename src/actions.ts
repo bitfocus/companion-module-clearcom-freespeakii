@@ -91,6 +91,7 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Mode',
 					default: 'pulse',
+					disableAutoExpression: true,
 					choices: [
 						{ id: 'pulse', label: 'Pulse' },
 						{ id: 'on', label: 'On' },
@@ -171,6 +172,7 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Mode',
 					default: 'pulse',
+					disableAutoExpression: true,
 					choices: [
 						{ id: 'pulse', label: 'Pulse' },
 						{ id: 'on', label: 'On' },
@@ -221,6 +223,7 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Mode',
 					default: 'toggle',
+					disableAutoExpression: true,
 					choices: [
 						{ id: 'join', label: 'Join' },
 						{ id: 'leave', label: 'Leave' },
@@ -253,6 +256,7 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Mode',
 					default: 'pulse',
+					disableAutoExpression: true,
 					choices: [
 						{ id: 'pulse', label: 'Pulse' },
 						{ id: 'on', label: 'On' },
@@ -282,6 +286,7 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Mode',
 					default: 'toggle',
+					disableAutoExpression: true,
 					choices: [
 						{ id: 'on', label: 'Force on' },
 						{ id: 'off', label: 'Force off' },
