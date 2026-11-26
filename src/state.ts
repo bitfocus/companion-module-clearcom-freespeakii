@@ -28,9 +28,12 @@ const NONE: StateChange = { live: false, structure: false }
 /** How long a channel call sent from Companion labels the packs it rings (the base does not report the channel). */
 const CALL_CHANNEL_MS = 10_000
 
-/** Set `obj.a.b.c = value` for a dotted path, creating intermediate objects. */
+const UNSAFE_KEYS = new Set(['__proto__', 'prototype', 'constructor'])
+
+/** Set `obj.a.b.c = value` for a dotted path, creating intermediate objects. Paths that could reach a prototype are ignored. */
 export function setByPath(obj: Record<string, unknown>, path: string, value: unknown): void {
 	const parts = path.split('.')
+	if (parts.some((k) => UNSAFE_KEYS.has(k))) return
 	let cur: Record<string, unknown> = obj
 	for (const key of parts.slice(0, -1)) {
 		if (typeof cur[key] !== 'object' || cur[key] === null) cur[key] = {}
