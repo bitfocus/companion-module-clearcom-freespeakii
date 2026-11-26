@@ -1,5 +1,5 @@
 import { InstanceBase, InstanceStatus, type SomeCompanionConfigField } from '@companion-module/base'
-import { DEFAULT_CONFIG, GetConfigFields, type ModuleConfig } from './config.js'
+import { DEFAULT_CONFIG, GetConfigFields, normalizeConfig, type ModuleConfig } from './config.js'
 import { UpdateVariableDefinitions, computeVariableValues, type VariablesSchema } from './variables.js'
 import { UpgradeScripts } from './upgrades.js'
 import { UpdateActions, type ActionsSchema } from './actions.js'
@@ -49,7 +49,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 	}
 
 	async init(config: ModuleConfig): Promise<void> {
-		this.config = { ...DEFAULT_CONFIG, ...config }
+		this.config = normalizeConfig(config)
 		this.#defineAll()
 		this.#start()
 	}
@@ -60,7 +60,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 
 	async configUpdated(config: ModuleConfig): Promise<void> {
 		this.#stop()
-		this.config = { ...DEFAULT_CONFIG, ...config }
+		this.config = normalizeConfig(config)
 		this.state = new FsiiState()
 		this.#lastValues = {}
 		this.#defineAll()
