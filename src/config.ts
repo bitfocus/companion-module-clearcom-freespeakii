@@ -16,6 +16,21 @@ export const DEFAULT_CONFIG: ModuleConfig = {
 	rmkAllEnabled: false,
 }
 
+/** Merge saved config over the defaults; out-of-range or missing numbers fall back to a safe value. */
+export function normalizeConfig(config: Partial<ModuleConfig>): ModuleConfig {
+	const c = { ...DEFAULT_CONFIG, ...config }
+	const num = (v: unknown, min: number, max: number, fallback: number) => {
+		const n = Number(v)
+		return v === '' || v === null || !Number.isFinite(n) ? fallback : Math.min(max, Math.max(min, Math.round(n)))
+	}
+	return {
+		...c,
+		deviceId: num(c.deviceId, 0, 255, DEFAULT_CONFIG.deviceId),
+		heartbeatMs: num(c.heartbeatMs, 2000, 60000, DEFAULT_CONFIG.heartbeatMs),
+		lowBattery: num(c.lowBattery, 1, 99, DEFAULT_CONFIG.lowBattery),
+	}
+}
+
 export function GetConfigFields(): SomeCompanionConfigField[] {
 	return [
 		{
