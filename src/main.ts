@@ -25,6 +25,8 @@ const TESTED_VERSIONS = ['1.6.15.0']
 const REDRAW_MS = 50
 const DEFINITIONS_MS = 500
 const REFETCH_MS = 250
+/** Failed live-connection attempts before the status turns to Connection Failure. */
+const CONNECT_FAILURES_BEFORE_ERROR = 3
 
 export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 	config: ModuleConfig = { ...DEFAULT_CONFIG }
@@ -38,6 +40,8 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 	#lastValues: VariablesSchema = {}
 	#lastStatus = ''
 	#warnedVersion = false
+	/** Failed live-connection attempts since the last successful connect. */
+	#connectFailures = 0
 	#unknownEvents = new Set<string>()
 
 	constructor(internal: unknown) {
@@ -89,12 +93,14 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 			return
 		}
 		this.api = new FsiiApi(host, this.config.deviceId)
+		this.#connectFailures = 0
 		this.#setStatus(InstanceStatus.Connecting, `Connecting to ${host}`)
 
 		const socket = new FsiiSocket(host)
 		this.#socket = socket
 		socket.on('connect', () => void this.#onConnect())
 		socket.on('disconnect', (reason) => this.#onDisconnect(reason))
+		socket.on('connectError', (reason) => this.#onConnectError(reason))
 		socket.on('event', (name, data) => this.#onEvent(name, data))
 		socket.start()
 
@@ -115,6 +121,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 
 	async #onConnect(): Promise<void> {
 		this.log('info', `Connected to ${this.config.host}`)
+		this.#connectFailures = 0
 		this.state.ready = false
 		await this.#fullRefresh()
 	}
@@ -124,6 +131,15 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 		this.state.ready = false
 		this.#setStatus(InstanceStatus.ConnectionFailure, `Lost connection to ${this.config.host}`)
 		this.#apply({ live: true, structure: false })
+	}
+
+	/** Log the first failure of an outage; after a few, show it in the status even if the heartbeat still answers. */
+	#onConnectError(reason: string): void {
+		this.#connectFailures++
+		if (this.#connectFailures === 1)
+			this.log('warn', `Live connection to ${this.config.host} failed: ${reason} (retrying)`)
+		if (this.#connectFailures >= CONNECT_FAILURES_BEFORE_ERROR)
+			this.#setStatus(InstanceStatus.ConnectionFailure, `Live updates unavailable: ${reason}`)
 	}
 
 	/** Fetch every REST snapshot. Called on (re)connect and after a base reboot. */
