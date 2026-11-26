@@ -183,6 +183,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				TEXT_OPTION,
 			],
 			callback: async ({ options }) => {
+				if (!self.api || !self.socketConnected) return self.log('warn', 'Channel call: not connected to the base')
 				const members = channelParticipants(state, options.connection)
 				const packIds = members.filter((p) => state.endpoints.has(p.id)).map((p) => p.id)
 				const packTargets = packIds.map((id) => `p:${id}`)
@@ -267,6 +268,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async ({ options }) => {
 				if (!self.api || !self.socketConnected) return self.log('warn', 'Port call: not connected to the base')
+				if (!state.ports.has(options.port)) return self.log('warn', `Port call: port ${options.port} not found`)
 				const hw = decodePortId(options.port).hwIndex
 				const send = async (on: boolean) =>
 					self
