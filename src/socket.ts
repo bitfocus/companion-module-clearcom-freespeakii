@@ -7,6 +7,8 @@ const LIVE_TOPICS = ['devices', 'interfaces', 'ports', 'roles', 'connections', '
 export interface FsiiSocketEvents {
 	connect: []
 	disconnect: [reason: string]
+	/** A connect or reconnect attempt failed or timed out (fires once per attempt). */
+	connectError: [reason: string]
 	/** Every server event, e.g. ('EndpointUpdated', {...}) or ('live:roles', {updated:true}) */
 	event: [name: string, data: unknown]
 }
@@ -50,6 +52,8 @@ export class FsiiSocket extends EventEmitter<FsiiSocketEvents> {
 			this.emit('connect')
 		})
 		socket.on('disconnect', (reason: string) => this.emit('disconnect', reason))
+		socket.on('connect_error', (err?: Error) => this.emit('connectError', err?.message || 'connection error'))
+		socket.on('connect_timeout', () => this.emit('connectError', 'timed out'))
 	}
 
 	#subscribe(): void {
