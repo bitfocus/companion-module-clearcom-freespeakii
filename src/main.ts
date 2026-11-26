@@ -224,25 +224,25 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 			}
 			case 'live:connections':
 			case 'live:calls':
-				return this.#debounced('connLive', REFETCH_MS, async (api) => {
+				return this.#throttled('connLive', REFETCH_MS, async (api) => {
 					const list = await api.connectionsLiveStatus()
 					this.#apply(s.setConnectionLive(list, (p) => participantName(s, p)))
 				})
 			case 'live:roles':
-				return this.#debounced('roles', REFETCH_MS, async (api) => this.#apply(s.setRoles(await api.roles())))
+				return this.#throttled('roles', REFETCH_MS, async (api) => this.#apply(s.setRoles(await api.roles())))
 			case 'live:vpl':
-				return this.#debounced('connections', REFETCH_MS, async (api) =>
+				return this.#throttled('connections', REFETCH_MS, async (api) =>
 					this.#apply(s.setConnections(await api.connections())),
 				)
 			case 'live:ports':
 			case 'live:interfaces':
 				return this.refreshPorts()
 			case 'live:endpoints':
-				return this.#debounced('endpoints', REFETCH_MS, async (api) =>
+				return this.#throttled('endpoints', REFETCH_MS, async (api) =>
 					this.#apply(s.setEndpoints(await api.endpoints())),
 				)
 			case 'live:devices':
-				return this.#debounced('device', REFETCH_MS, async () => this.#pollDevice())
+				return this.#throttled('device', REFETCH_MS, async () => this.#pollDevice())
 			case 'init':
 			case 'User:connected':
 			case 'User:disconnected':
@@ -264,12 +264,18 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 	}
 
 	refreshPorts(): void {
-		this.#debounced('ports', REFETCH_MS, async (api) => {
+		this.#throttled('ports', REFETCH_MS, async (api) => {
 			const ports = await Promise.all(INTERFACE_HW_INDEXES.map(async (hw) => api.ports(hw).catch(() => [])))
 			this.#apply(this.state.setPorts(ports.flat()))
 		})
 	}
 
+	/** Run fn ms after the first call; later calls while it is pending join that run instead of delaying it. */
+	#throttled(key: string, ms: number, fn: (api: FsiiApi) => Promise<void>): void {
+		if (!this.#debounces.has(key)) this.#debounced(key, ms, fn)
+	}
+
+	/** Run fn once the calls have stopped for ms. */
 	#debounced(key: string, ms: number, fn: (api: FsiiApi) => Promise<void>): void {
 		clearTimeout(this.#debounces.get(key))
 		this.#debounces.set(
@@ -287,7 +293,7 @@ export default class ModuleInstance extends InstanceBase<ModuleSchema> {
 
 	#apply(change: StateChange): void {
 		if (change.structure) this.#debounced('definitions', DEFINITIONS_MS, async () => this.#defineAll())
-		if (change.live) this.#debounced('redraw', REDRAW_MS, async () => this.#redraw())
+		if (change.live) this.#throttled('redraw', REDRAW_MS, async () => this.#redraw())
 	}
 
 	#defineAll(): void {
